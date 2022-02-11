@@ -1,0 +1,14 @@
+version: '3.1'
+services:
+    mysql:
+        image: 'mysql:8.0'
+        working_dir: /application
+        volumes:
+            - '.:/application'
+        environment:
+            - MYSQL_ROOT_PASSWORD=123456789
+            - MYSQL_DATABASE=starwars
+            - MYSQL_USER=admin
+            - MYSQL_PASSWORD=123456789
+        ports:
+            - '3304:3306'

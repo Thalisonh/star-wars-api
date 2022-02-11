@@ -1,6 +1,9 @@
 package planets
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/Thalisonh/star-wars-api/models"
+	"github.com/gin-gonic/gin"
+)
 
 type IPlanetsController interface {
 	Create(c *gin.Context)
@@ -15,5 +18,8 @@ func NewPlanetsController(service IPlanetsService) IPlanetsController {
 }
 
 func (p *PlanetsController) Create(c *gin.Context) {
+	planet := &models.Planets{}
+	c.ShouldBindJSON(planet)
 
+	p.IPlanetsService.Create(planet)
 }
