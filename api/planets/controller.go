@@ -7,10 +7,11 @@ type IPlanetsController interface {
 }
 
 type PlanetsController struct {
+	IPlanetsService
 }
 
-func NewPlanetsController() IPlanetsController {
-	return &PlanetsController{}
+func NewPlanetsController(service IPlanetsService) IPlanetsController {
+	return &PlanetsController{service}
 }
 
 func (p *PlanetsController) Create(c *gin.Context) {
