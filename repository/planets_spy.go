@@ -4,10 +4,12 @@ import "github.com/Thalisonh/star-wars-api/models"
 
 type IPlanetsRepositorySpy struct {
 	IPlanetsRepository
-	CreateResponse *models.Planets
-	CreateError    error
-	GetAllResponse *[]models.Planets
-	GetAllError    error
+	CreateResponse  *models.Planets
+	CreateError     error
+	GetAllResponse  *[]models.Planets
+	GetAllError     error
+	GetByIdResponse *models.Planets
+	GetByIdError    error
 }
 
 func (r *IPlanetsRepositorySpy) Create(planet *models.Planets) (*models.Planets, error) {
@@ -16,4 +18,8 @@ func (r *IPlanetsRepositorySpy) Create(planet *models.Planets) (*models.Planets,
 
 func (r *IPlanetsRepositorySpy) GetAll() (*[]models.Planets, error) {
 	return r.GetAllResponse, r.GetAllError
+}
+
+func (r *IPlanetsRepositorySpy) GetById(planetId int) (*models.Planets, error) {
+	return r.GetByIdResponse, r.GetByIdError
 }

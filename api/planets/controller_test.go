@@ -3,6 +3,7 @@ package planets_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -109,8 +110,8 @@ func TestGetAllController(t *testing.T) {
 	})
 
 	t.Run("GetAll - Should return error when any error occurred", func(t *testing.T) {
-		success := planets.PlanetsServiceSpy{
-			CreateError: gorm.ErrInvalidData,
+		fail := planets.PlanetsServiceSpy{
+			GetAllError: gorm.ErrInvalidData,
 		}
 
 		w := httptest.NewRecorder()
@@ -118,8 +119,95 @@ func TestGetAllController(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 
+		planets := planets.NewPlanetsController(&fail)
+		planets.GetAll(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+}
+
+func TestGetByIdController(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	path := "/api/1"
+
+	fakePlanet := &models.Planets{}
+	gofakeit.Struct(fakePlanet)
+
+	t.Run("GetById - Should a success", func(t *testing.T) {
+		success := planets.PlanetsServiceSpy{
+			GetByIdResponse: fakePlanet,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
+
 		planets := planets.NewPlanetsController(&success)
-		planets.Create(ctx)
+		planets.GetById(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := &models.Planets{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	})
+
+	t.Run("GetById - Should return error when parameter is invalid", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			GetByIdError: errors.New("Id must be a integer"),
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "naboo"})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.GetById(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Contains(t, "Id must be a integer", response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+
+	t.Run("GetById - Should return error when planetId not found", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			GetByIdError: gorm.ErrRecordNotFound,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.GetById(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
 
