@@ -12,4 +12,5 @@ func Router(allGroup *gin.RouterGroup) {
 	c := NewPlanetsController(s)
 
 	allGroup.POST("/create", c.Create)
+	allGroup.GET("/", c.GetAll)
 }

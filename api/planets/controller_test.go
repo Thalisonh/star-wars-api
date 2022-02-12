@@ -75,3 +75,61 @@ func TestCreateController(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 	})
 }
+
+func TestGetAllController(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	path := "/api/"
+
+	fakePlanet := &models.Planets{}
+	gofakeit.Struct(fakePlanet)
+
+	t.Run("GetAll - Should a success", func(t *testing.T) {
+		success := planets.PlanetsServiceSpy{
+			GetAllResponse: &[]models.Planets{*fakePlanet},
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+
+		planets := planets.NewPlanetsController(&success)
+		planets.GetAll(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := &[]models.Planets{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	})
+
+	t.Run("GetAll - Should return error when any error occurred", func(t *testing.T) {
+		success := planets.PlanetsServiceSpy{
+			CreateError: gorm.ErrInvalidData,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+
+		planets := planets.NewPlanetsController(&success)
+		planets.Create(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+}

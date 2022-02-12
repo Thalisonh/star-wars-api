@@ -7,6 +7,7 @@ import (
 
 type IPlanetsService interface {
 	Create(planet *models.Planets) (*models.Planets, error)
+	GetAll() (*[]models.Planets, error)
 }
 
 type PlanetsService struct {
@@ -24,4 +25,13 @@ func (p *PlanetsService) Create(planet *models.Planets) (*models.Planets, error)
 	}
 
 	return newPlanet, nil
+}
+
+func (p *PlanetsService) GetAll() (*[]models.Planets, error) {
+	planets, err := p.IPlanetsRepository.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	return planets, nil
 }
