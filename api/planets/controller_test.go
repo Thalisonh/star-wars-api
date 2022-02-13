@@ -111,7 +111,7 @@ func TestGetAllController(t *testing.T) {
 
 	t.Run("GetAll - Should return error when any error occurred", func(t *testing.T) {
 		fail := planets.PlanetsServiceSpy{
-			GetAllError: gorm.ErrInvalidData,
+			GetAllError: gorm.ErrRecordNotFound,
 		}
 
 		w := httptest.NewRecorder()
@@ -208,6 +208,93 @@ func TestGetByIdController(t *testing.T) {
 
 		planets := planets.NewPlanetsController(&fail)
 		planets.GetById(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+}
+
+func TestGetByNameController(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	path := "/api/name/naboo"
+
+	fakePlanet := &models.Planets{}
+	gofakeit.Struct(fakePlanet)
+
+	t.Run("GetByName - Should a success", func(t *testing.T) {
+		success := planets.PlanetsServiceSpy{
+			GetByNameResponse: fakePlanet,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "name", Value: "naboo"})
+
+		planets := planets.NewPlanetsController(&success)
+		planets.GetByName(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := &models.Planets{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response)
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	})
+
+	t.Run("GetByName - Should return error when parameter is invalid", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			GetByNameError: errors.New("Id must be a integer"),
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "name", Value: ""})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.GetByName(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Contains(t, gorm.ErrInvalidField.Error(), response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+
+	t.Run("GetByName - Should return error when planetName not found", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			GetByNameError: gorm.ErrRecordNotFound,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "name", Value: "naboo"})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.GetByName(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
 

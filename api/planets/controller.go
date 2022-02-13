@@ -13,6 +13,7 @@ type IPlanetsController interface {
 	Create(c *gin.Context)
 	GetAll(c *gin.Context)
 	GetById(c *gin.Context)
+	GetByName(c *gin.Context)
 }
 
 type PlanetsController struct {
@@ -42,7 +43,7 @@ func (p *PlanetsController) GetAll(c *gin.Context) {
 	planets, err := p.IPlanetsService.GetAll()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": gorm.ErrRecordNotFound,
+			"message": gorm.ErrRecordNotFound.Error(),
 		})
 		return
 	}
@@ -65,7 +66,28 @@ func (p *PlanetsController) GetById(c *gin.Context) {
 	planets, err := p.IPlanetsService.GetById(planetId)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Record not found",
+			"message": gorm.ErrRecordNotFound.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, planets)
+}
+
+func (p *PlanetsController) GetByName(c *gin.Context) {
+	planetName := c.Param("name")
+
+	if planetName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": gorm.ErrInvalidField.Error(),
+		})
+		return
+	}
+
+	planets, err := p.IPlanetsService.GetByName(planetName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": gorm.ErrRecordNotFound.Error(),
 		})
 		return
 	}

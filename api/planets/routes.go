@@ -14,4 +14,5 @@ func Router(allGroup *gin.RouterGroup) {
 	allGroup.POST("/create", c.Create)
 	allGroup.GET("/", c.GetAll)
 	allGroup.GET("/:id", c.GetById)
+	allGroup.GET("/name/:name", c.GetByName)
 }

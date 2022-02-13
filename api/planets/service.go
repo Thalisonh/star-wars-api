@@ -9,6 +9,7 @@ type IPlanetsService interface {
 	Create(planet *models.Planets) (*models.Planets, error)
 	GetAll() (*[]models.Planets, error)
 	GetById(planetId int) (*models.Planets, error)
+	GetByName(planetName string) (*models.Planets, error)
 }
 
 type PlanetsService struct {
@@ -39,6 +40,15 @@ func (p *PlanetsService) GetAll() (*[]models.Planets, error) {
 
 func (p *PlanetsService) GetById(planetId int) (*models.Planets, error) {
 	planet, err := p.IPlanetsRepository.GetById(planetId)
+	if err != nil {
+		return nil, err
+	}
+
+	return planet, nil
+}
+
+func (p *PlanetsService) GetByName(planetName string) (*models.Planets, error) {
+	planet, err := p.IPlanetsRepository.GetByName(planetName)
 	if err != nil {
 		return nil, err
 	}

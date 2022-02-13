@@ -105,3 +105,36 @@ func TestGetById(t *testing.T) {
 		assert.Nil(t, planet)
 	})
 }
+
+func TestGetByName(t *testing.T) {
+	fakePlanet := &models.Planets{}
+	gofakeit.Struct(fakePlanet)
+
+	planetId := "naboo"
+
+	t.Run("GetByName - Should return a success response", func(t *testing.T) {
+		success := repository.IPlanetsRepositorySpy{
+			GetByNameResponse: fakePlanet,
+		}
+
+		planets := planets.NewPlanetsService(&success)
+
+		planet, err := planets.GetByName(planetId)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, planet)
+	})
+
+	t.Run("GetByName - Should return error when fail to GetByName planets", func(t *testing.T) {
+		failed := repository.IPlanetsRepositorySpy{
+			GetByNameError: gorm.ErrRecordNotFound,
+		}
+
+		planets := planets.NewPlanetsService(&failed)
+
+		planet, err := planets.GetByName(planetId)
+
+		assert.NotNil(t, err)
+		assert.Nil(t, planet)
+	})
+}
