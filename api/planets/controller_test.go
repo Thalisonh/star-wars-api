@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Thalisonh/star-wars-api/api/planets"
+	"github.com/Thalisonh/star-wars-api/middlewares"
 	"github.com/Thalisonh/star-wars-api/models"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/gin-gonic/gin"
@@ -29,13 +30,19 @@ func TestCreateController(t *testing.T) {
 			CreateResponse: fakePlanet,
 		}
 
+		middleware := &middlewares.SwapiServiceSpy{
+			TotalFilmsStatusCode: http.StatusOK,
+			TotalFilmsCount:      10,
+			TotalFilmsError:      nil,
+		}
+
 		w := httptest.NewRecorder()
 		bodyBytes, _ := json.Marshal(fakePlanet)
 
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodPost, path, bytes.NewBuffer(bodyBytes))
 
-		planets := planets.NewPlanetsController(&success)
+		planets := planets.NewPlanetsController(&success, middleware)
 		planets.Create(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -55,13 +62,51 @@ func TestCreateController(t *testing.T) {
 			CreateError: gorm.ErrInvalidData,
 		}
 
+		middleware := &middlewares.SwapiServiceSpy{
+			TotalFilmsStatusCode: http.StatusOK,
+			TotalFilmsCount:      10,
+			TotalFilmsError:      nil,
+		}
+
 		w := httptest.NewRecorder()
 		bodyBytes, _ := json.Marshal(fakePlanet)
 
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodPost, path, bytes.NewBuffer(bodyBytes))
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, middleware)
+		planets.Create(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+
+	t.Run("Create - Should return 0 when Swapi return error", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			CreateError: gorm.ErrInvalidData,
+		}
+
+		middleware := &middlewares.SwapiServiceSpy{
+			TotalFilmsStatusCode: http.StatusInternalServerError,
+			TotalFilmsCount:      10,
+			TotalFilmsError:      errors.New("Unexpected error"),
+		}
+
+		w := httptest.NewRecorder()
+		bodyBytes, _ := json.Marshal(fakePlanet)
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodPost, path, bytes.NewBuffer(bodyBytes))
+
+		planets := planets.NewPlanetsController(&fail, middleware)
 		planets.Create(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -94,7 +139,7 @@ func TestGetAllController(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 
-		planets := planets.NewPlanetsController(&success)
+		planets := planets.NewPlanetsController(&success, nil)
 		planets.GetAll(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -119,7 +164,7 @@ func TestGetAllController(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.GetAll(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -153,7 +198,7 @@ func TestGetByIdController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
 
-		planets := planets.NewPlanetsController(&success)
+		planets := planets.NewPlanetsController(&success, nil)
 		planets.GetById(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -179,7 +224,7 @@ func TestGetByIdController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "naboo"})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.GetById(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -206,7 +251,7 @@ func TestGetByIdController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.GetById(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -240,7 +285,7 @@ func TestGetByNameController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "name", Value: "naboo"})
 
-		planets := planets.NewPlanetsController(&success)
+		planets := planets.NewPlanetsController(&success, nil)
 		planets.GetByName(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -266,7 +311,7 @@ func TestGetByNameController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "name", Value: ""})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.GetByName(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -293,7 +338,7 @@ func TestGetByNameController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "name", Value: "naboo"})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.GetByName(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -327,7 +372,7 @@ func TestDeleteController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
 
-		planets := planets.NewPlanetsController(&success)
+		planets := planets.NewPlanetsController(&success, nil)
 		planets.Delete(ctx)
 
 		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
@@ -345,7 +390,7 @@ func TestDeleteController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.Delete(ctx)
 
 		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
@@ -362,7 +407,7 @@ func TestDeleteController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.Delete(ctx)
 
 		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
@@ -379,7 +424,7 @@ func TestDeleteController(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
 		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "naboo"})
 
-		planets := planets.NewPlanetsController(&fail)
+		planets := planets.NewPlanetsController(&fail, nil)
 		planets.Delete(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)

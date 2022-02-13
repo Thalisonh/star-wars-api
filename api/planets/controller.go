@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Thalisonh/star-wars-api/middlewares"
 	"github.com/Thalisonh/star-wars-api/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,15 +20,28 @@ type IPlanetsController interface {
 
 type PlanetsController struct {
 	IPlanetsService
+	middlewares.ISwapi
 }
 
-func NewPlanetsController(service IPlanetsService) IPlanetsController {
-	return &PlanetsController{service}
+func NewPlanetsController(service IPlanetsService, middlewares middlewares.ISwapi) IPlanetsController {
+	return &PlanetsController{service, middlewares}
 }
 
 func (p *PlanetsController) Create(c *gin.Context) {
 	planet := &models.Planets{}
 	c.ShouldBindJSON(planet)
+
+	statusCode, totalFilms, err := p.ISwapi.TotalFilms(planet.Name)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Planet not found",
+		})
+		return
+	}
+
+	if statusCode == http.StatusOK {
+		planet.FilmsCount = totalFilms
+	}
 
 	planets, err := p.IPlanetsService.Create(planet)
 	if err != nil {
@@ -44,7 +58,7 @@ func (p *PlanetsController) GetAll(c *gin.Context) {
 	planets, err := p.IPlanetsService.GetAll()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": gorm.ErrRecordNotFound.Error(),
+			"message": err,
 		})
 		return
 	}

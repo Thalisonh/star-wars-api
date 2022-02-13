@@ -1,7 +1,10 @@
 package planets
 
 import (
+	"net/http"
+
 	"github.com/Thalisonh/star-wars-api/database"
+	"github.com/Thalisonh/star-wars-api/middlewares"
 	"github.com/Thalisonh/star-wars-api/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -9,7 +12,8 @@ import (
 func Router(allGroup *gin.RouterGroup) {
 	r := repository.NewPlanetsRepository(database.GetDb())
 	s := NewPlanetsService(r)
-	c := NewPlanetsController(s)
+	m := middlewares.NewSwapiService(&http.Client{})
+	c := NewPlanetsController(s, m)
 
 	allGroup.POST("/create", c.Create)
 	allGroup.GET("/", c.GetAll)

@@ -24,21 +24,21 @@ func (r *PlanetsRepository) Create(planet *models.Planets) (*models.Planets, err
 }
 
 func (r *PlanetsRepository) GetAll() (*[]models.Planets, error) {
-	var planets []models.Planets
+	planets := &[]models.Planets{}
 
-	return &planets, r.db.Find(planets).Error
+	return planets, r.db.Find(planets).Error
 }
 
 func (r *PlanetsRepository) GetById(planetId int) (*models.Planets, error) {
-	var planets models.Planets
+	planets := &models.Planets{}
 
-	return &planets, r.db.Where("id = ?").First(planets).Error
+	return planets, r.db.Where("id = ?", planetId).First(planets).Error
 }
 
 func (r *PlanetsRepository) GetByName(planetName string) (*models.Planets, error) {
-	var planets models.Planets
+	planets := &models.Planets{}
 
-	return &planets, r.db.Where("name = ?").First(planets).Error
+	return planets, r.db.Where("name = ?", planetName).First(planets).Error
 }
 
 func (r *PlanetsRepository) Delete(planet *models.Planets) error {
