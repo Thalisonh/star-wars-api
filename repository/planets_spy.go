@@ -12,6 +12,7 @@ type IPlanetsRepositorySpy struct {
 	GetByIdError      error
 	GetByNameResponse *models.Planets
 	GetByNameError    error
+	DeleteError       error
 }
 
 func (r *IPlanetsRepositorySpy) Create(planet *models.Planets) (*models.Planets, error) {
@@ -28,4 +29,8 @@ func (r *IPlanetsRepositorySpy) GetById(planetId int) (*models.Planets, error) {
 
 func (r *IPlanetsRepositorySpy) GetByName(planetName string) (*models.Planets, error) {
 	return r.GetByNameResponse, r.GetByNameError
+}
+
+func (r *IPlanetsRepositorySpy) Delete(planet *models.Planets) error {
+	return r.DeleteError
 }

@@ -15,4 +15,5 @@ func Router(allGroup *gin.RouterGroup) {
 	allGroup.GET("/", c.GetAll)
 	allGroup.GET("/:id", c.GetById)
 	allGroup.GET("/name/:name", c.GetByName)
+	allGroup.DELETE("/:id", c.Delete)
 }

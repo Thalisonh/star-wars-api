@@ -12,6 +12,7 @@ type PlanetsServiceSpy struct {
 	GetByIdError      error
 	GetByNameResponse *models.Planets
 	GetByNameError    error
+	DeleteError       error
 }
 
 func (p *PlanetsServiceSpy) Create(planet *models.Planets) (*models.Planets, error) {
@@ -28,4 +29,8 @@ func (p *PlanetsServiceSpy) GetById(planetId int) (*models.Planets, error) {
 
 func (r *PlanetsServiceSpy) GetByName(planetName string) (*models.Planets, error) {
 	return r.GetByNameResponse, r.GetByNameError
+}
+
+func (r *PlanetsServiceSpy) Delete(planetId int) error {
+	return r.DeleteError
 }

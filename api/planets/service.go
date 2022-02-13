@@ -3,6 +3,7 @@ package planets
 import (
 	"github.com/Thalisonh/star-wars-api/models"
 	"github.com/Thalisonh/star-wars-api/repository"
+	"gorm.io/gorm"
 )
 
 type IPlanetsService interface {
@@ -10,6 +11,7 @@ type IPlanetsService interface {
 	GetAll() (*[]models.Planets, error)
 	GetById(planetId int) (*models.Planets, error)
 	GetByName(planetName string) (*models.Planets, error)
+	Delete(planetId int) error
 }
 
 type PlanetsService struct {
@@ -54,4 +56,18 @@ func (p *PlanetsService) GetByName(planetName string) (*models.Planets, error) {
 	}
 
 	return planet, nil
+}
+
+func (p *PlanetsService) Delete(planetId int) error {
+	planet, err := p.GetById(planetId)
+	if err != nil {
+		return gorm.ErrRecordNotFound
+	}
+
+	errDelete := p.IPlanetsRepository.Delete(planet)
+	if errDelete != nil {
+		return errDelete
+	}
+
+	return nil
 }

@@ -138,3 +138,43 @@ func TestGetByName(t *testing.T) {
 		assert.Nil(t, planet)
 	})
 }
+
+func TestDelete(t *testing.T) {
+	planetId := 1
+
+	t.Run("Delete - Should return a success response", func(t *testing.T) {
+		success := repository.IPlanetsRepositorySpy{
+			DeleteError: nil,
+		}
+
+		planets := planets.NewPlanetsService(&success)
+
+		err := planets.Delete(planetId)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("Delete - Should return error when fail to Delete planets", func(t *testing.T) {
+		failed := repository.IPlanetsRepositorySpy{
+			DeleteError: gorm.ErrRecordNotFound,
+		}
+
+		planets := planets.NewPlanetsService(&failed)
+
+		err := planets.Delete(planetId)
+
+		assert.NotNil(t, err)
+	})
+
+	t.Run("Delete - Should return error when fail to get planet by id", func(t *testing.T) {
+		failed := repository.IPlanetsRepositorySpy{
+			GetByIdError: gorm.ErrRecordNotFound,
+		}
+
+		planets := planets.NewPlanetsService(&failed)
+
+		err := planets.Delete(planetId)
+
+		assert.NotNil(t, err)
+	})
+}

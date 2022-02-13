@@ -14,6 +14,7 @@ type IPlanetsController interface {
 	GetAll(c *gin.Context)
 	GetById(c *gin.Context)
 	GetByName(c *gin.Context)
+	Delete(c *gin.Context)
 }
 
 type PlanetsController struct {
@@ -93,4 +94,35 @@ func (p *PlanetsController) GetByName(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, planets)
+}
+
+func (p *PlanetsController) Delete(c *gin.Context) {
+	id := c.Param("id")
+
+	planetId, err := strconv.Atoi(id)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Id must be a integer",
+		})
+		return
+	}
+
+	errDelete := p.IPlanetsService.Delete(planetId)
+
+	if errDelete != nil {
+		if errDelete == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{
+				"message": gorm.ErrRecordNotFound.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": errDelete,
+		})
+		return
+	}
+
+	c.AbortWithStatus(http.StatusOK)
 }

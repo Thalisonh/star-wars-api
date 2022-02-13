@@ -51,7 +51,7 @@ func TestCreateController(t *testing.T) {
 	})
 
 	t.Run("Create - Should return error when any error occurred", func(t *testing.T) {
-		success := planets.PlanetsServiceSpy{
+		fail := planets.PlanetsServiceSpy{
 			CreateError: gorm.ErrInvalidData,
 		}
 
@@ -61,7 +61,7 @@ func TestCreateController(t *testing.T) {
 		ctx, _ := gin.CreateTestContext(w)
 		ctx.Request = httptest.NewRequest(http.MethodPost, path, bytes.NewBuffer(bodyBytes))
 
-		planets := planets.NewPlanetsController(&success)
+		planets := planets.NewPlanetsController(&fail)
 		planets.Create(ctx)
 
 		body, _ := ioutil.ReadAll(w.Body)
@@ -305,6 +305,93 @@ func TestGetByNameController(t *testing.T) {
 		}
 
 		assert.NotNil(t, response["message"])
+		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+	})
+}
+
+func TestDeleteController(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	path := "/api/1"
+
+	fakePlanet := &models.Planets{}
+	gofakeit.Struct(fakePlanet)
+
+	t.Run("Delete - Should a success", func(t *testing.T) {
+		success := planets.PlanetsServiceSpy{
+			DeleteError: nil,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
+
+		planets := planets.NewPlanetsController(&success)
+		planets.Delete(ctx)
+
+		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	})
+
+	t.Run("Delete - Should return error when getById fail", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			GetByIdError: gorm.ErrRecordNotFound,
+			DeleteError:  gorm.ErrRecordNotFound,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.Delete(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+	})
+
+	t.Run("Delete - Should return error when delete fail", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			DeleteError: gorm.ErrInvalidDB,
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.Delete(ctx)
+
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+	})
+
+	t.Run("Delete - Should return error when parameter is invalid", func(t *testing.T) {
+		fail := planets.PlanetsServiceSpy{
+			DeleteError: errors.New("Id must be a integer"),
+		}
+
+		w := httptest.NewRecorder()
+
+		ctx, _ := gin.CreateTestContext(w)
+		ctx.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "naboo"})
+
+		planets := planets.NewPlanetsController(&fail)
+		planets.Delete(ctx)
+
+		body, _ := ioutil.ReadAll(w.Body)
+
+		response := map[string]string{}
+		if err := json.Unmarshal(body, &response); err != nil {
+			t.Error(err)
+			return
+		}
+
+		assert.NotNil(t, response["message"])
+		assert.Contains(t, "Id must be a integer", response["message"])
 		assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 	})
 }

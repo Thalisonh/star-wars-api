@@ -10,6 +10,7 @@ type IPlanetsRepository interface {
 	GetAll() (*[]models.Planets, error)
 	GetById(planetId int) (*models.Planets, error)
 	GetByName(planetName string) (*models.Planets, error)
+	Delete(planet *models.Planets) error
 }
 
 type PlanetsRepository struct{ db *gorm.DB }
@@ -38,4 +39,8 @@ func (r *PlanetsRepository) GetByName(planetName string) (*models.Planets, error
 	var planets models.Planets
 
 	return &planets, r.db.Where("name = ?").First(planets).Error
+}
+
+func (r *PlanetsRepository) Delete(planet *models.Planets) error {
+	return r.db.Delete(planet).Error
 }
